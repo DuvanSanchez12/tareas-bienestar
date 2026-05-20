@@ -1,66 +1,160 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client'
 
-export default function Home() {
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import ThemeToggle from '@/components/ThemeToggle'
+import styles from './page.module.css'
+
+export default function AuthPage() {
+  const [isLogin, setIsLogin] = useState(true)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [nombre, setNombre] = useState('')
+  const [rol, setRol] = useState<'jefe' | 'usuario'>('usuario')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+  const supabase = createClient()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    try {
+      if (isLogin) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
+        if (error) throw error
+        router.push('/dashboard')
+      } else {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              nombre,
+              rol,
+            },
+          },
+        })
+        if (signUpError) throw signUpError
+        router.push('/dashboard')
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className={styles.container}>
+      <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
+        <ThemeToggle />
+      </div>
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <h1>✨ TaskMatrix</h1>
+          <p>{isLogin ? 'Bienvenido de nuevo' : 'Crea tu cuenta para comenzar'}</p>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <form onSubmit={handleSubmit} className={styles.form}>
+          {!isLogin && (
+            <>
+              <div className={styles.field}>
+                <label className="label">👤 Nombre</label>
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  className="input"
+                  required={!isLogin}
+                  placeholder="Tu nombre completo"
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className="label">🎭 ¿Cómo te registras?</label>
+                <div className={styles.roleSelector}>
+                  <label className={`${styles.roleOption} ${rol === 'jefe' ? styles.selected : ''}`}>
+                    <input
+                      type="radio"
+                      name="rol"
+                      value="jefe"
+                      checked={rol === 'jefe'}
+                      onChange={() => setRol('jefe')}
+                    />
+                    <span className={styles.roleIcon}>👔</span>
+                    <span className={styles.roleName}>Jefe</span>
+                    <span className={styles.roleDesc}>Crea y asigna tareas</span>
+                  </label>
+                  <label className={`${styles.roleOption} ${rol === 'usuario' ? styles.selected : ''}`}>
+                    <input
+                      type="radio"
+                      name="rol"
+                      value="usuario"
+                      checked={rol === 'usuario'}
+                      onChange={() => setRol('usuario')}
+                    />
+                    <span className={styles.roleIcon}>💻</span>
+                    <span className={styles.roleName}>Usuario</span>
+                    <span className={styles.roleDesc}>Realiza las tareas</span>
+                  </label>
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className={styles.field}>
+            <label className="label">📧 Correo electrónico</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input"
+              required
+              placeholder="tu@email.com"
             />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+
+          <div className={styles.field}>
+            <label className="label">🔐 Contraseña</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input"
+              required
+              placeholder="••••••••"
+              minLength={6}
+            />
+          </div>
+
+          {error && <div className={styles.error}>{error}</div>}
+
+          <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', padding: '14px' }}>
+            {loading ? '⏳ Cargando...' : isLogin ? '🚀 Iniciar sesión' : '✨ Crear cuenta'}
+          </button>
+        </form>
+
+        <div className={styles.toggle}>
+          {isLogin ? (
+            <>
+              ¿No tienes cuenta?{' '}
+              <button onClick={() => setIsLogin(false)}>Regístrate gratis</button>
+            </>
+          ) : (
+            <>
+              ¿Ya tienes cuenta?{' '}
+              <button onClick={() => setIsLogin(true)}>Inicia sesión</button>
+            </>
+          )}
         </div>
-      </main>
+      </div>
     </div>
-  );
+  )
 }
