@@ -58,8 +58,8 @@ export default function AuthPage() {
       </div>
       <div className={styles.card}>
         <div className={styles.header}>
-          <h1>✨ TaskMatrix</h1>
-          <p>{isLogin ? 'Bienvenido de nuevo' : 'Crea tu cuenta para comenzar'}</p>
+          <h1>Bienvenido</h1>
+          <p>{isLogin ? 'Inicia sesión para continuar' : 'Crea tu cuenta para comenzar'}</p>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
