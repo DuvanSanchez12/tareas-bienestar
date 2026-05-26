@@ -20,13 +20,6 @@ export default async function EquipoPage() {
     redirect('/dashboard')
   }
 
-  const { data: usuarios } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('rol', 'usuario')
-    .eq('jefe_id', user.id)
-    .order('nombre')
-
   const { data: tareas } = await supabase
     .from('tareas')
     .select('id, titulo, descripcion, puntos, fecha_limite')
@@ -37,6 +30,17 @@ export default async function EquipoPage() {
   const { data: tareaUsuarios } = tareasIds.length > 0
     ? await supabase.from('tarea_usuarios').select('id, tarea_id, user_id, progreso').in('tarea_id', tareasIds)
     : { data: [] }
+
+  // Usuarios del equipo: los que tienen jefe_id asignado O han recibido tareas de este jefe
+  const userIdsConTareas = [...new Set((tareaUsuarios || []).map(a => a.user_id))]
+  const todosUserIds = userIdsConTareas.length > 0 ? userIdsConTareas : ['no-users']
+
+  const { data: usuarios } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('rol', 'usuario')
+    .or(`jefe_id.eq.${user.id},id.in.(${todosUserIds.join(',')})`)
+    .order('nombre')
 
   const tareasMap = new Map((tareas || []).map(t => [t.id, t]))
 
