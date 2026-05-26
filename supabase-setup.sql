@@ -65,3 +65,6 @@ CREATE POLICY "Jefe can update tareas" ON tareas FOR UPDATE TO authenticated USI
 CREATE POLICY "Jefe can delete tareas" ON tareas FOR DELETE TO authenticated USING (true);
 CREATE POLICY "Users can update their tarea_usuarios" ON tarea_usuarios FOR UPDATE TO authenticated USING (auth.uid() = user_id);
 CREATE POLICY "Jefe can create tarea_usuarios" ON tarea_usuarios FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Jefe can delete tarea_usuarios" ON tarea_usuarios FOR DELETE TO authenticated USING (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND rol = 'jefe')
+);

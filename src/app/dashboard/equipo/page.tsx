@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import TeamView from '@/components/TeamView'
 
 export default async function EquipoPage() {
   const supabase = await createClient()
@@ -27,7 +28,13 @@ export default async function EquipoPage() {
 
   const { data: tareaUsuarios } = await supabase
     .from('tarea_usuarios')
-    .select('user_id, progreso')
+    .select('id, tarea_id, user_id, progreso')
+
+  const { data: tareas } = await supabase
+    .from('tareas')
+    .select('id, titulo, descripcion, puntos, fecha_limite')
+
+  const tareasMap = new Map((tareas || []).map(t => [t.id, t]))
 
   const usuariosConStats = (usuarios || []).map((u) => {
     const asignaciones = (tareaUsuarios || []).filter((a) => a.user_id === u.id)
@@ -36,49 +43,44 @@ export default async function EquipoPage() {
       ? Math.round(asignaciones.reduce((acc, a) => acc + a.progreso, 0) / totalTareas)
       : 0
 
+    const tareasDelUsuario = asignaciones
+      .map((a) => {
+        const t = tareasMap.get(a.tarea_id)
+        if (!t) return null
+        return {
+          tu_id: a.id,
+          tarea_id: a.tarea_id,
+          titulo: t.titulo,
+          descripcion: t.descripcion,
+          puntos: t.puntos,
+          fecha_limite: t.fecha_limite,
+          progreso: a.progreso,
+        }
+      })
+      .filter(Boolean) as Array<{
+        tu_id: string
+        tarea_id: string
+        titulo: string
+        descripcion: string | null
+        puntos: number
+        fecha_limite: string
+        progreso: number
+      }>
+
     return {
-      ...u,
+      id: u.id,
+      email: u.email,
+      nombre: u.nombre,
       totalTareas,
       promedioProgreso,
+      tareas: tareasDelUsuario,
     }
   })
 
   return (
     <div>
       <h2 style={{ marginBottom: '24px' }}>Equipo</h2>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-        gap: '16px',
-      }}>
-        {usuariosConStats.map((u) => (
-          <div
-            key={u.id}
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '8px',
-              padding: '16px',
-            }}
-          >
-            <div style={{ fontWeight: 600, marginBottom: '8px' }}>{u.nombre}</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '12px' }}>
-              {u.email}
-            </div>
-            <div style={{ display: 'flex', gap: '16px', fontSize: '13px' }}>
-              <span>
-                <strong>{u.totalTareas}</strong> tareas asignadas
-              </span>
-              <span>
-                <strong>{u.promedioProgreso}%</strong> progreso promedio
-              </span>
-            </div>
-          </div>
-        ))}
-        {usuariosConStats.length === 0 && (
-          <p style={{ color: 'var(--text-secondary)' }}>No hay usuarios en el equipo</p>
-        )}
-      </div>
+      <TeamView usuarios={usuariosConStats} />
     </div>
   )
 }
