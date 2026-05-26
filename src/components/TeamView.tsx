@@ -55,8 +55,9 @@ function getLabelCompletado(progreso: number): string {
   return 'Por terminar'
 }
 
-function UserCard({ user }: { user: UsuarioConTareas }) {
+export default function TeamView({ usuarios }: TeamViewProps) {
   const supabase = createClient()
+  const [selectedUser, setSelectedUser] = useState<UsuarioConTareas | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<{ tu_id: string; titulo: string } | null>(null)
 
@@ -73,76 +74,103 @@ function UserCard({ user }: { user: UsuarioConTareas }) {
     window.location.reload()
   }
 
-  const expandId = `expand-${user.id}`
-
   return (
-    <div className={styles.card}>
-      <label htmlFor={expandId} className={styles.cardHeader}>
-        <div className={styles.cardInfo}>
-          <div className={styles.cardName}>{user.nombre}</div>
-          <div className={styles.cardEmail}>{user.email}</div>
-        </div>
-        <div className={styles.stats}>
-          <span className={styles.stat}>
-            <strong>{user.totalTareas}</strong> tareas
-          </span>
-          <span className={styles.stat}>
-            <strong>{user.promedioProgreso}%</strong> prom.
-          </span>
-        </div>
-        <span className={`${styles.chevron}`}>▼</span>
-      </label>
-      <input type="checkbox" id={expandId} className={styles.expandToggle} />
-
-      <div className={styles.expandedSection}>
-        <div className={styles.expandedInner}>
-          {user.tareas.length === 0 ? (
-            <p className={styles.noTasks}>No tiene tareas asignadas</p>
-          ) : (
-            <div className={styles.tasksList}>
-              {user.tareas.map((t) => {
-                const colorVenc = getColorVencimiento(t.fecha_limite)
-                const colorProg = getColorProgreso(t.progreso)
-                return (
-                  <div key={t.tu_id} className={styles.taskRow}>
-                    <div className={styles.taskInfo}>
-                      <div className={styles.taskTitle}>{t.titulo}</div>
-                      <div className={styles.taskMeta}>
-                        <span className={`badge status-${colorVenc}`}>
-                          {getDiasRestantes(t.fecha_limite) < 0
-                            ? `Vencida hace ${Math.abs(getDiasRestantes(t.fecha_limite))}d`
-                            : getDiasRestantes(t.fecha_limite) === 0
-                            ? 'Vence hoy'
-                            : `${getDiasRestantes(t.fecha_limite)}d`}
-                        </span>
-                        <span className={`badge status-${colorProg === 'alto' ? 'verde' : colorProg === 'medio' ? 'amarillo' : 'rojo'}`}>
-                          {t.progreso}% • {getLabelCompletado(t.progreso)}
-                        </span>
-                        <span className={styles.taskPts}>⭐ {t.puntos} pts</span>
-                      </div>
-                    </div>
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={() => setConfirmDelete({ tu_id: t.tu_id, titulo: t.titulo })}
-                      title="Quitar asignación"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )
-              })}
+    <div>
+      <div className={styles.grid}>
+        {usuarios.map((u) => (
+          <button key={u.id} className={styles.card} onClick={() => setSelectedUser(u)}>
+            <div className={styles.cardInfo}>
+              <div className={styles.cardName}>{u.nombre}</div>
+              <div className={styles.cardEmail}>{u.email}</div>
             </div>
-          )}
-        </div>
+            <div className={styles.stats}>
+              <span className={styles.stat}>
+                <strong>{u.totalTareas}</strong> tareas
+              </span>
+              <span className={styles.stat}>
+                <strong>{u.promedioProgreso}%</strong> prom.
+              </span>
+            </div>
+            <span className={styles.chevron}>▶</span>
+          </button>
+        ))}
+        {usuarios.length === 0 && (
+          <p style={{ color: 'var(--text-secondary)' }}>No hay usuarios en el equipo</p>
+        )}
       </div>
 
-      {confirmDelete && (
+      {selectedUser && !confirmDelete && (
+        <div className={styles.modalOverlay} onClick={() => setSelectedUser(null)}>
+          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div>
+                <h2 className={styles.modalUserName}>{selectedUser.nombre}</h2>
+                <p className={styles.modalUserEmail}>{selectedUser.email}</p>
+              </div>
+              <button className={styles.modalClose} onClick={() => setSelectedUser(null)}>✕</button>
+            </div>
+
+            <div className={styles.modalUserStats}>
+              <div className={styles.modalStat}>
+                <span className={styles.modalStatValue}>{selectedUser.totalTareas}</span>
+                <span className={styles.modalStatLabel}>Tareas asignadas</span>
+              </div>
+              <div className={styles.modalStat}>
+                <span className={styles.modalStatValue}>{selectedUser.promedioProgreso}%</span>
+                <span className={styles.modalStatLabel}>Progreso promedio</span>
+              </div>
+            </div>
+
+            <div className={styles.modalTasksSection}>
+              <h3 className={styles.modalTasksTitle}>Tareas asignadas</h3>
+              {selectedUser.tareas.length === 0 ? (
+                <p className={styles.noTasks}>No tiene tareas asignadas</p>
+              ) : (
+                <div className={styles.modalTasksList}>
+                  {selectedUser.tareas.map((t) => {
+                    const colorVenc = getColorVencimiento(t.fecha_limite)
+                    const colorProg = getColorProgreso(t.progreso)
+                    return (
+                      <div key={t.tu_id} className={styles.modalTaskRow}>
+                        <div className={styles.modalTaskInfo}>
+                          <div className={styles.modalTaskTitle}>{t.titulo}</div>
+                          <div className={styles.modalTaskMeta}>
+                            <span className={`badge status-${colorVenc}`}>
+                              {getDiasRestantes(t.fecha_limite) < 0
+                                ? `Vencida ${Math.abs(getDiasRestantes(t.fecha_limite))}d`
+                                : getDiasRestantes(t.fecha_limite) === 0
+                                ? 'Vence hoy'
+                                : `${getDiasRestantes(t.fecha_limite)}d`}
+                            </span>
+                            <span className={`badge status-${colorProg === 'alto' ? 'verde' : colorProg === 'medio' ? 'amarillo' : 'rojo'}`}>
+                              {t.progreso}% • {getLabelCompletado(t.progreso)}
+                            </span>
+                            <span>⭐ {t.puntos} pts</span>
+                          </div>
+                        </div>
+                        <button
+                          className={styles.removeBtn}
+                          onClick={() => setConfirmDelete({ tu_id: t.tu_id, titulo: t.titulo })}
+                        >
+                          Quitar asignación
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && selectedUser && (
         <div className={styles.modalOverlay} onClick={() => setConfirmDelete(null)}>
           <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
             <div className={styles.modalIcon}>🗑️</div>
             <h2 className={styles.modalTitle}>¿Quitar asignación?</h2>
             <p className={styles.modalText}>
-              Se quitará la tarea <strong>"{confirmDelete.titulo}"</strong> de <strong>{user.nombre}</strong>.
+              Se quitará la tarea <strong>"{confirmDelete.titulo}"</strong> de <strong>{selectedUser.nombre}</strong>.
             </p>
             <p className={styles.modalSubtext}>El progreso se perderá. La tarea seguirá existiendo.</p>
             <div className={styles.modalActions}>
@@ -163,21 +191,6 @@ function UserCard({ user }: { user: UsuarioConTareas }) {
           </div>
         </div>
       )}
-    </div>
-  )
-}
-
-export default function TeamView({ usuarios }: TeamViewProps) {
-  return (
-    <div>
-      <div className={styles.grid}>
-        {usuarios.map((u) => (
-          <UserCard key={u.id} user={u} />
-        ))}
-        {usuarios.length === 0 && (
-          <p style={{ color: 'var(--text-secondary)' }}>No hay usuarios en el equipo</p>
-        )}
-      </div>
     </div>
   )
 }
