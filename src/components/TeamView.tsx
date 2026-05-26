@@ -122,43 +122,91 @@ export default function TeamView({ usuarios }: TeamViewProps) {
             </div>
 
             <div className={styles.modalTasksSection}>
-              <h3 className={styles.modalTasksTitle}>Tareas asignadas</h3>
-              {selectedUser.tareas.length === 0 ? (
-                <p className={styles.noTasks}>No tiene tareas asignadas</p>
-              ) : (
-                <div className={styles.modalTasksList}>
-                  {selectedUser.tareas.map((t) => {
-                    const colorVenc = getColorVencimiento(t.fecha_limite)
-                    const colorProg = getColorProgreso(t.progreso)
-                    return (
-                      <div key={t.tu_id} className={styles.modalTaskRow}>
-                        <div className={styles.modalTaskInfo}>
-                          <div className={styles.modalTaskTitle}>{t.titulo}</div>
-                          <div className={styles.modalTaskMeta}>
-                            <span className={`badge status-${colorVenc}`}>
-                              {getDiasRestantes(t.fecha_limite) < 0
-                                ? `Vencida ${Math.abs(getDiasRestantes(t.fecha_limite))}d`
-                                : getDiasRestantes(t.fecha_limite) === 0
-                                ? 'Vence hoy'
-                                : `${getDiasRestantes(t.fecha_limite)}d`}
-                            </span>
-                            <span className={`badge status-${colorProg === 'alto' ? 'verde' : colorProg === 'medio' ? 'amarillo' : 'rojo'}`}>
-                              {t.progreso}% • {getLabelCompletado(t.progreso)}
-                            </span>
-                            <span>⭐ {t.puntos} pts</span>
-                          </div>
+              {(() => {
+                const activas = selectedUser.tareas.filter(t => t.progreso < 100)
+                const completadas = selectedUser.tareas.filter(t => t.progreso === 100)
+
+                return (
+                  <>
+                    {activas.length > 0 && (
+                      <>
+                        <h3 className={styles.modalTasksTitle}>📋 En progreso</h3>
+                        <div className={styles.modalTasksList}>
+                          {activas.map((t) => {
+                            const colorVenc = getColorVencimiento(t.fecha_limite)
+                            const colorProg = getColorProgreso(t.progreso)
+                            return (
+                              <div key={t.tu_id} className={styles.modalTaskRow}>
+                                <div className={styles.modalTaskInfo}>
+                                  <div className={styles.modalTaskTitle}>{t.titulo}</div>
+                                  <div className={styles.modalTaskMeta}>
+                                    <span className={`badge status-${colorVenc}`}>
+                                      {getDiasRestantes(t.fecha_limite) < 0
+                                        ? `Vencida ${Math.abs(getDiasRestantes(t.fecha_limite))}d`
+                                        : getDiasRestantes(t.fecha_limite) === 0
+                                        ? 'Vence hoy'
+                                        : `${getDiasRestantes(t.fecha_limite)}d`}
+                                    </span>
+                                    <span className={`badge status-${colorProg === 'alto' ? 'verde' : colorProg === 'medio' ? 'amarillo' : 'rojo'}`}>
+                                      {t.progreso}% • {getLabelCompletado(t.progreso)}
+                                    </span>
+                                    <span>⭐ {t.puntos} pts</span>
+                                  </div>
+                                </div>
+                                <button
+                                  className={styles.removeBtn}
+                                  onClick={() => setConfirmDelete({ tu_id: t.tu_id, titulo: t.titulo })}
+                                >
+                                  Quitar asignación
+                                </button>
+                              </div>
+                            )
+                          })}
                         </div>
-                        <button
-                          className={styles.removeBtn}
-                          onClick={() => setConfirmDelete({ tu_id: t.tu_id, titulo: t.titulo })}
-                        >
-                          Quitar asignación
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+                      </>
+                    )}
+
+                    {completadas.length > 0 && (
+                      <>
+                        <h3 className={styles.modalTasksTitle} style={{ marginTop: activas.length > 0 ? '20px' : 0 }}>✅ Completadas</h3>
+                        <div className={styles.modalTasksList}>
+                          {completadas.map((t) => {
+                            const colorVenc = getColorVencimiento(t.fecha_limite)
+                            return (
+                              <div key={t.tu_id} className={styles.modalTaskRow}>
+                                <div className={styles.modalTaskInfo}>
+                                  <div className={styles.modalTaskTitle}>{t.titulo}</div>
+                                  <div className={styles.modalTaskMeta}>
+                                    <span className={`badge status-${colorVenc}`}>
+                                      {getDiasRestantes(t.fecha_limite) < 0
+                                        ? `Vencida ${Math.abs(getDiasRestantes(t.fecha_limite))}d`
+                                        : getDiasRestantes(t.fecha_limite) === 0
+                                        ? 'Vence hoy'
+                                        : `${getDiasRestantes(t.fecha_limite)}d`}
+                                    </span>
+                                    <span style={{ color: '#10b981', fontWeight: 600 }}>✅ 100%</span>
+                                    <span>⭐ {t.puntos} pts</span>
+                                  </div>
+                                </div>
+                                <button
+                                  className={styles.removeBtn}
+                                  onClick={() => setConfirmDelete({ tu_id: t.tu_id, titulo: t.titulo })}
+                                >
+                                  Quitar asignación
+                                </button>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </>
+                    )}
+
+                    {selectedUser.tareas.length === 0 && (
+                      <p className={styles.noTasks}>No tiene tareas asignadas</p>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           </div>
         </div>
