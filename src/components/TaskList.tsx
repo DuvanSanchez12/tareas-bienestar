@@ -333,108 +333,185 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
           </p>
         </div>
       ) : (
-        <div className={styles.grid}>
-          {filteredTareas.map((tarea) => {
-            const colorVenc = getColorVencimiento(tarea.fecha_limite)
-            const progreso = tarea.miProgreso || tarea.promedioTarea || 0
-            const colorProgreso = getColorProgreso(progreso)
-            const importanciaColor = getImportanciaColor(tarea.puntos)
+        (() => {
+          const tareasCompletadas = filteredTareas.filter(t =>
+            rol === 'jefe'
+              ? t.tarea_usuarios?.every(a => a.progreso === 100) ?? false
+              : (t.miProgreso ?? 0) === 100
+          )
+          const completadasSet = new Set(tareasCompletadas.map(t => t.id))
+          const tareasActivas = filteredTareas.filter(t => !completadasSet.has(t.id))
 
-            return (
-              <div key={tarea.id} className={`${styles.card} fade-in`}>
-                <div className={styles.cardHeader}>
-                  <h3 className={styles.cardTitle}>{tarea.titulo}</h3>
-                  <span className={`${styles.puntosBadge} ${styles[`puntos${tarea.puntos}`]}`}>
-                    ⭐ {tarea.puntos} pts
-                  </span>
-                </div>
+          return (
+            <>
+              {tareasActivas.length > 0 && (
+                <div className={styles.sectionTitle}>📋 En progreso</div>
+              )}
+              <div className={styles.grid}>
+                {tareasActivas.map((tarea) => {
+                  const colorVenc = getColorVencimiento(tarea.fecha_limite)
+                  const progreso = tarea.miProgreso || tarea.promedioTarea || 0
+                  const colorProgreso = getColorProgreso(progreso)
+                  const importanciaColor = getImportanciaColor(tarea.puntos)
 
-                {tarea.descripcion && (
-                  <p className={styles.desc}>{tarea.descripcion}</p>
-                )}
-
-                <div className={styles.meta}>
-                  <div className={styles.metaItem}>
-                    <span className={styles.metaIcon}>📅</span>
-                    <span>{new Date(tarea.fecha_limite).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
-                  </div>
-                  <span className={`badge status-${colorVenc}`}>
-                    {getLabelVencimiento(tarea.fecha_limite)}
-                  </span>
-                  <span className={`badge status-${importanciaColor}`}>
-                    {getImportanciaLabel(tarea.puntos)}
-                  </span>
-                </div>
-
-                {rol === 'usuario' && (
-                  <div className={styles.progresoSection}>
-                    <div className={styles.progresoHeader}>
-                      <span className={styles.progresoLabel}>Mi progreso</span>
-                      <span className={`${styles.progresoValue} ${styles[`progreso-${colorProgreso}`]}`}>
-                        {progreso}% • {getProgresoLabel(progreso)}
-                      </span>
-                    </div>
-                    
-                    {progreso < 100 ? (
-                      <>
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={progresoTemporal[tarea.id] !== undefined ? progresoTemporal[tarea.id] : progreso}
-                          onChange={(e) => {
-                            const newValue = parseInt(e.target.value)
-                            if (newValue === 100) {
-                              setProgresoTemporal({ ...progresoTemporal, [tarea.id]: newValue })
-                              setShowConfirm(tarea.id)
-                            } else {
-                              updateProgreso(tarea.id, newValue)
-                            }
-                          }}
-                          className={styles.progresoSlider}
-                          disabled={updating === tarea.id}
-                        />
-                        <div className={styles.sliderLabels}>
-                          <span>0%</span>
-                          <span>50%</span>
-                          <span>100%</span>
-                        </div>
-                        {progreso >= 80 && (
-                          <button 
-                            className={styles.completeBtn}
-                            onClick={() => setShowConfirm(tarea.id)}
-                          >
-                            ✅ Marcar como completada
-                          </button>
-                        )}
-                      </>
-                    ) : (
-                      <div className={styles.completedBadge}>
-                        🎉 Tarea completada
+                  return (
+                    <div key={tarea.id} className={`${styles.card} fade-in`}>
+                      <div className={styles.cardHeader}>
+                        <h3 className={styles.cardTitle}>{tarea.titulo}</h3>
+                        <span className={`${styles.puntosBadge} ${styles[`puntos${tarea.puntos}`]}`}>
+                          ⭐ {tarea.puntos} pts
+                        </span>
                       </div>
-                    )}
-                  </div>
-                )}
 
-                {rol === 'jefe' && tarea.tarea_usuarios && tarea.tarea_usuarios.length > 0 && (
-                  <div className={styles.asignadosSection}>
-                    <div className={styles.asignadosTitle}>👥 Asignados</div>
-                    <div className={styles.asignadosList}>
-                      {tarea.tarea_usuarios.map((asignacion) => (
-                        <div key={asignacion.user_id} className={styles.asignado}>
-                          <span className={styles.asignadoName}>{asignacion.user?.nombre}</span>
-                          <span className={`${styles.asignadoProgreso} badge status-${getColorProgreso(asignacion.progreso) === 'alto' ? 'verde' : getColorProgreso(asignacion.progreso) === 'medio' ? 'amarillo' : 'rojo'}`}>
-                            {asignacion.progreso}%
-                          </span>
+                      {tarea.descripcion && (
+                        <p className={styles.desc}>{tarea.descripcion}</p>
+                      )}
+
+                      <div className={styles.meta}>
+                        <div className={styles.metaItem}>
+                          <span className={styles.metaIcon}>📅</span>
+                          <span>{new Date(tarea.fecha_limite).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
                         </div>
-                      ))}
+                        <span className={`badge status-${colorVenc}`}>
+                          {getLabelVencimiento(tarea.fecha_limite)}
+                        </span>
+                        <span className={`badge status-${importanciaColor}`}>
+                          {getImportanciaLabel(tarea.puntos)}
+                        </span>
+                      </div>
+
+                      {rol === 'usuario' && (
+                        <div className={styles.progresoSection}>
+                          <div className={styles.progresoHeader}>
+                            <span className={styles.progresoLabel}>Mi progreso</span>
+                            <span className={`${styles.progresoValue} ${styles[`progreso-${colorProgreso}`]}`}>
+                              {progreso}% • {getProgresoLabel(progreso)}
+                            </span>
+                          </div>
+                          
+                          {progreso < 100 ? (
+                            <>
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={progresoTemporal[tarea.id] !== undefined ? progresoTemporal[tarea.id] : progreso}
+                                onChange={(e) => {
+                                  const newValue = parseInt(e.target.value)
+                                  if (newValue === 100) {
+                                    setProgresoTemporal({ ...progresoTemporal, [tarea.id]: newValue })
+                                    setShowConfirm(tarea.id)
+                                  } else {
+                                    updateProgreso(tarea.id, newValue)
+                                  }
+                                }}
+                                className={styles.progresoSlider}
+                                disabled={updating === tarea.id}
+                              />
+                              <div className={styles.sliderLabels}>
+                                <span>0%</span>
+                                <span>50%</span>
+                                <span>100%</span>
+                              </div>
+                              {progreso >= 80 && (
+                                <button 
+                                  className={styles.completeBtn}
+                                  onClick={() => setShowConfirm(tarea.id)}
+                                >
+                                  ✅ Marcar como completada
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <div className={styles.completedBadge}>
+                              🎉 Tarea completada
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {rol === 'jefe' && tarea.tarea_usuarios && tarea.tarea_usuarios.length > 0 && (
+                        <div className={styles.asignadosSection}>
+                          <div className={styles.asignadosTitle}>👥 Asignados</div>
+                          <div className={styles.asignadosList}>
+                            {tarea.tarea_usuarios.map((asignacion) => (
+                              <div key={asignacion.user_id} className={styles.asignado}>
+                                <span className={styles.asignadoName}>{asignacion.user?.nombre}</span>
+                                <span className={`${styles.asignadoProgreso} badge status-${getColorProgreso(asignacion.progreso) === 'alto' ? 'verde' : getColorProgreso(asignacion.progreso) === 'medio' ? 'amarillo' : 'rojo'}`}>
+                                  {asignacion.progreso}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
+                  )
+                })}
               </div>
-            )
-          })}
-        </div>
+
+              {tareasCompletadas.length > 0 && (
+                <div className={styles.completedSection}>
+                  <div className={styles.sectionTitle}>✅ Completadas</div>
+                  <div className={styles.grid}>
+                    {tareasCompletadas.map((tarea) => {
+                      const colorVenc = getColorVencimiento(tarea.fecha_limite)
+                      const importanciaColor = getImportanciaColor(tarea.puntos)
+
+                      return (
+                        <div key={tarea.id} className={`${styles.card} ${styles.completedCard} fade-in`}>
+                          <div className={styles.cardHeader}>
+                            <h3 className={styles.cardTitle}>{tarea.titulo}</h3>
+                            <span className={`${styles.puntosBadge} ${styles[`puntos${tarea.puntos}`]}`}>
+                              ⭐ {tarea.puntos} pts
+                            </span>
+                          </div>
+
+                          {tarea.descripcion && (
+                            <p className={styles.desc}>{tarea.descripcion}</p>
+                          )}
+
+                          <div className={styles.meta}>
+                            <div className={styles.metaItem}>
+                              <span className={styles.metaIcon}>📅</span>
+                              <span>{new Date(tarea.fecha_limite).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
+                            </div>
+                            <span className={`badge status-${colorVenc}`}>
+                              {getLabelVencimiento(tarea.fecha_limite)}
+                            </span>
+                            <span className={`badge status-${importanciaColor}`}>
+                              {getImportanciaLabel(tarea.puntos)}
+                            </span>
+                          </div>
+
+                          <div className={styles.completedBadge}>
+                            🎉 Tarea completada
+                          </div>
+
+                          {rol === 'jefe' && tarea.tarea_usuarios && tarea.tarea_usuarios.length > 0 && (
+                            <div className={styles.asignadosSection}>
+                              <div className={styles.asignadosTitle}>👥 Asignados</div>
+                              <div className={styles.asignadosList}>
+                                {tarea.tarea_usuarios.map((asignacion) => (
+                                  <div key={asignacion.user_id} className={styles.asignado}>
+                                    <span className={styles.asignadoName}>{asignacion.user?.nombre}</span>
+                                    <span className={styles.asignadoProgresoCompleto}>
+                                      ✅ 100%
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )
+        })()
       )}
     </div>
   )

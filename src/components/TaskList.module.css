@@ -170,6 +170,32 @@
   margin: 0 auto;
 }
 
+/* Section titles */
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+.completedSection {
+  margin-top: 40px;
+}
+
+.completedCard {
+  opacity: 0.75;
+}
+
+.completedCard:hover {
+  opacity: 1;
+}
+
+.asignadoProgresoCompleto {
+  font-weight: 600;
+  font-size: 13px;
+  color: #10b981;
+}
+
 /* Card */
 .card {
   background: var(--surface);
