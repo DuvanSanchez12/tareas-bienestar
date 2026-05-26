@@ -69,6 +69,15 @@ export default function CreateTaskForm({ jefeId, usuarios }: CreateTaskFormProps
           .insert(asignaciones)
 
         if (asigError) throw asigError
+
+        // Vincular usuarios al equipo del jefe
+        for (const userId of asignados) {
+          await supabase
+            .from('profiles')
+            .update({ jefe_id: jefeId })
+            .eq('id', userId)
+            .is('jefe_id', null)
+        }
       }
 
       router.push('/dashboard')
