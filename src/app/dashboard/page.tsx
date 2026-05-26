@@ -41,18 +41,20 @@ export default async function DashboardPage() {
 
     const creatorsMap = new Map(creatorsData.map(c => [c.id, c.nombre]))
 
-    tareas = (tareasData || []).map(tarea => {
-      const asignacionesTarea = asignacionesData.filter(a => a.tarea_id === tarea.id)
-      const promedioTarea = asignacionesTarea.length > 0
-        ? Math.round(asignacionesTarea.reduce((acc, a) => acc + a.progreso, 0) / asignacionesTarea.length)
-        : 0
-      return {
-        ...tarea,
-        promedioTarea,
-        creator: creatorsMap.has(tarea.created_by) ? { nombre: creatorsMap.get(tarea.created_by) } : null,
-        tarea_usuarios: asignacionesTarea,
-      }
-    })
+    tareas = (tareasData || [])
+      .map(tarea => {
+        const asignacionesTarea = asignacionesData.filter(a => a.tarea_id === tarea.id)
+        const promedioTarea = asignacionesTarea.length > 0
+          ? Math.round(asignacionesTarea.reduce((acc, a) => acc + a.progreso, 0) / asignacionesTarea.length)
+          : 0
+        return {
+          ...tarea,
+          promedioTarea,
+          creator: creatorsMap.has(tarea.created_by) ? { nombre: creatorsMap.get(tarea.created_by) } : null,
+          tarea_usuarios: asignacionesTarea,
+        }
+      })
+      .filter(t => t.tarea_usuarios.length > 0)
   } else {
     const { data: asignaciones } = await supabase
       .from('tarea_usuarios')
