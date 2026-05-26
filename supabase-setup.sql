@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   email TEXT,
   nombre TEXT NOT NULL,
   rol TEXT NOT NULL CHECK (rol IN ('jefe', 'usuario')),
+  jefe_id UUID REFERENCES profiles(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -11,12 +12,13 @@ CREATE TABLE IF NOT EXISTS profiles (
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, nombre, rol)
+  INSERT INTO public.profiles (id, email, nombre, rol, jefe_id)
   VALUES (
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'nombre', 'Usuario'),
-    COALESCE(NEW.raw_user_meta_data->>'rol', 'usuario')
+    COALESCE(NEW.raw_user_meta_data->>'rol', 'usuario'),
+    NULLIF(NEW.raw_user_meta_data->>'jefe_id', '')::UUID
   );
   RETURN NEW;
 END;

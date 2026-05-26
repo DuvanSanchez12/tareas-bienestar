@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -12,10 +12,28 @@ export default function AuthPage() {
   const [password, setPassword] = useState('')
   const [nombre, setNombre] = useState('')
   const [rol, setRol] = useState<'jefe' | 'usuario'>('usuario')
+  const [jefeId, setJefeId] = useState('')
+  const [jefes, setJefes] = useState<{ id: string; nombre: string }[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    if (!isLogin && rol === 'usuario') {
+      supabase
+        .from('profiles')
+        .select('id, nombre')
+        .eq('rol', 'jefe')
+        .order('nombre')
+        .then(({ data }) => {
+          setJefes(data || [])
+          if ((data || []).length > 0) {
+            setJefeId(data![0].id)
+          }
+        })
+    }
+  }, [isLogin, rol, supabase])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,14 +49,15 @@ export default function AuthPage() {
         if (error) throw error
         router.push('/dashboard')
       } else {
+        const metaData: Record<string, string> = { nombre, rol }
+        if (rol === 'usuario' && jefeId) {
+          metaData.jefe_id = jefeId
+        }
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: {
-              nombre,
-              rol,
-            },
+            data: metaData,
           },
         })
         if (signUpError) throw signUpError
@@ -106,6 +125,24 @@ export default function AuthPage() {
                   </label>
                 </div>
               </div>
+
+              {rol === 'usuario' && jefes.length > 0 && (
+                <div className={styles.field}>
+                  <label className="label">👔 Selecciona tu jefe</label>
+                  <select
+                    value={jefeId}
+                    onChange={(e) => setJefeId(e.target.value)}
+                    className="input"
+                    required
+                  >
+                    {jefes.map((j) => (
+                      <option key={j.id} value={j.id}>
+                        {j.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </>
           )}
 

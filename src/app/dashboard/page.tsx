@@ -26,6 +26,7 @@ export default async function DashboardPage() {
     const { data: tareasData } = await supabase
       .from('tareas')
       .select('*')
+      .eq('created_by', user.id)
       .order('fecha_limite', { ascending: true })
 
     const tareasIds = (tareasData || []).map(t => t.id)

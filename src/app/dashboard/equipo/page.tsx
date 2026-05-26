@@ -24,15 +24,19 @@ export default async function EquipoPage() {
     .from('profiles')
     .select('*')
     .eq('rol', 'usuario')
+    .eq('jefe_id', user.id)
     .order('nombre')
-
-  const { data: tareaUsuarios } = await supabase
-    .from('tarea_usuarios')
-    .select('id, tarea_id, user_id, progreso')
 
   const { data: tareas } = await supabase
     .from('tareas')
     .select('id, titulo, descripcion, puntos, fecha_limite')
+    .eq('created_by', user.id)
+
+  const tareasIds = (tareas || []).map(t => t.id)
+
+  const { data: tareaUsuarios } = tareasIds.length > 0
+    ? await supabase.from('tarea_usuarios').select('id, tarea_id, user_id, progreso').in('tarea_id', tareasIds)
+    : { data: [] }
 
   const tareasMap = new Map((tareas || []).map(t => [t.id, t]))
 
