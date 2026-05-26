@@ -29,6 +29,10 @@
   background: var(--hover);
 }
 
+.card:has(.expandToggle:checked) .chevron {
+  transform: rotate(180deg);
+}
+
 .cardInfo {
   flex: 1;
   min-width: 0;
@@ -66,8 +70,19 @@
   transform: rotate(180deg);
 }
 
+.expandToggle {
+  display: none;
+}
+
+.expandToggle:not(:checked) ~ .expandedSection {
+  display: none;
+}
+
 .expandedSection {
   border-top: 1px solid var(--border);
+}
+
+.expandedInner {
   padding: 8px 16px 16px;
 }
 

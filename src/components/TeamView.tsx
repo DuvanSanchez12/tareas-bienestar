@@ -57,7 +57,6 @@ function getLabelCompletado(progreso: number): string {
 
 function UserCard({ user }: { user: UsuarioConTareas }) {
   const supabase = createClient()
-  const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<{ tu_id: string; titulo: string } | null>(null)
 
@@ -74,12 +73,11 @@ function UserCard({ user }: { user: UsuarioConTareas }) {
     window.location.reload()
   }
 
+  const expandId = `expand-${user.id}`
+
   return (
     <div className={styles.card}>
-      <button
-        className={styles.cardHeader}
-        onClick={() => setExpanded(!expanded)}
-      >
+      <label htmlFor={expandId} className={styles.cardHeader}>
         <div className={styles.cardInfo}>
           <div className={styles.cardName}>{user.nombre}</div>
           <div className={styles.cardEmail}>{user.email}</div>
@@ -92,13 +90,12 @@ function UserCard({ user }: { user: UsuarioConTareas }) {
             <strong>{user.promedioProgreso}%</strong> prom.
           </span>
         </div>
-        <span className={`${styles.chevron} ${expanded ? styles.chevronUp : ''}`}>
-          ▼
-        </span>
-      </button>
+        <span className={`${styles.chevron}`}>▼</span>
+      </label>
+      <input type="checkbox" id={expandId} className={styles.expandToggle} />
 
-      {expanded && (
-        <div className={styles.expandedSection}>
+      <div className={styles.expandedSection}>
+        <div className={styles.expandedInner}>
           {user.tareas.length === 0 ? (
             <p className={styles.noTasks}>No tiene tareas asignadas</p>
           ) : (
@@ -137,7 +134,7 @@ function UserCard({ user }: { user: UsuarioConTareas }) {
             </div>
           )}
         </div>
-      )}
+      </div>
 
       {confirmDelete && (
         <div className={styles.modalOverlay} onClick={() => setConfirmDelete(null)}>
