@@ -24,7 +24,6 @@ export default async function CrearTareaPage() {
     .from('profiles')
     .select('id, nombre, email')
     .eq('rol', 'usuario')
-    .eq('jefe_id', user.id)
     .order('nombre')
 
   return (
