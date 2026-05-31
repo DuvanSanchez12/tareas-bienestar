@@ -188,7 +188,7 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
     }
 
     return result
-  }, [tareas, filterVencimiento, filterImportancia, searchTerm])
+  }, [tareas, filterVencimiento, filterImportancia, filterCategoria, searchTerm])
 
   const getFilterVencimientoLabel = (f: FilterVencimiento) => {
     switch (f) {
