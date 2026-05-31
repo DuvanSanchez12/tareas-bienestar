@@ -72,6 +72,25 @@
   gap: 10px;
 }
 
+.userInfoBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.2s;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+}
+
+.userInfoBtn:hover {
+  background: var(--background);
+}
+
 .userAvatar {
   width: 32px;
   height: 32px;

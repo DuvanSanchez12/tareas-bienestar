@@ -89,6 +89,10 @@ CREATE POLICY "Users can read notificaciones" ON notificaciones FOR SELECT TO au
 CREATE POLICY "Users can insert notificaciones" ON notificaciones FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Users can update notificaciones" ON notificaciones FOR UPDATE TO authenticated USING (jefe_id = auth.uid());
 
+-- Políticas para categorias
+CREATE POLICY "Jefe can update categorias" ON categorias FOR UPDATE TO authenticated USING (created_by = auth.uid());
+CREATE POLICY "Jefe can delete categorias" ON categorias FOR DELETE TO authenticated USING (created_by = auth.uid());
+
 -- Políticas de escritura
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
 CREATE POLICY "Jefe can create tareas" ON tareas FOR INSERT TO authenticated WITH CHECK (true);

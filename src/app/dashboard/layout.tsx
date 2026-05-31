@@ -7,6 +7,7 @@ import Link from 'next/link'
 import styles from './layout.module.css'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificacionesBell from '@/components/NotificacionesBell'
+import PerfilModal from '@/components/PerfilModal'
 
 interface Profile {
   id: string
@@ -19,6 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [perfilOpen, setPerfilOpen] = useState(false)
 
   useState(() => {
     async function loadUser() {
@@ -80,13 +82,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Link href="/dashboard" className={styles.logoIcon}>T</Link>
         </div>
         <div className={styles.userSection}>
-          <div className={styles.userInfo}>
+          <button className={styles.userInfoBtn} onClick={() => setPerfilOpen(true)}>
             <div className={styles.userAvatar}>{initials}</div>
             <div className={styles.userDetails}>
               <span className={styles.userName}>{profile.nombre}</span>
               <span className={styles.userRole}>{profile.rol === 'jefe' ? '👔 Jefe' : '💻 Usuario'}</span>
             </div>
-          </div>
+          </button>
           {profile.rol === 'jefe' && <NotificacionesBell jefeId={profile.id} />}
           <ThemeToggle />
           <button onClick={handleLogout} className={styles.logoutBtn}>
@@ -117,6 +119,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         <main className={styles.content}>{children}</main>
       </div>
+
+      {perfilOpen && (
+        <PerfilModal
+          profile={profile}
+          onClose={() => setPerfilOpen(false)}
+          onUpdate={() => window.location.reload()}
+        />
+      )}
     </div>
   )
 }
