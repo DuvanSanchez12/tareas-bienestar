@@ -109,8 +109,26 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
     }
   }
 
+  const crearNotificacion = async (tareaId: string, progreso: number) => {
+    const { data: tarea } = await supabase
+      .from('tareas')
+      .select('created_by')
+      .eq('id', tareaId)
+      .single()
+    if (tarea && tarea.created_by !== userId) {
+      await supabase.from('notificaciones').insert({
+        tarea_id: tareaId,
+        user_id: userId,
+        jefe_id: tarea.created_by,
+        tipo: progreso === 100 ? 'completada' : 'progreso',
+        progreso
+      })
+    }
+  }
+
   const updateProgreso = async (tareaId: string, progreso: number) => {
     setUpdating(tareaId)
+    await crearNotificacion(tareaId, progreso)
     await supabase
       .from('tarea_usuarios')
       .update({ progreso, checked_at: new Date().toISOString() })
@@ -121,6 +139,7 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
 
   const completarTarea = async (tareaId: string) => {
     setUpdating(tareaId)
+    await crearNotificacion(tareaId, 100)
     await supabase
       .from('tarea_usuarios')
       .update({ progreso: 100, checked_at: new Date().toISOString() })

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import styles from './layout.module.css'
 import ThemeToggle from '@/components/ThemeToggle'
+import NotificacionesBell from '@/components/NotificacionesBell'
 
 interface Profile {
   id: string
@@ -86,6 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className={styles.userRole}>{profile.rol === 'jefe' ? '👔 Jefe' : '💻 Usuario'}</span>
             </div>
           </div>
+          {profile.rol === 'jefe' && <NotificacionesBell jefeId={profile.id} />}
           <ThemeToggle />
           <button onClick={handleLogout} className={styles.logoutBtn}>
             🚪 <span>Salir</span>

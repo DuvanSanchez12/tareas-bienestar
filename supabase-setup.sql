@@ -60,11 +60,24 @@ CREATE TABLE IF NOT EXISTS tarea_usuarios (
   UNIQUE(tarea_id, user_id)
 );
 
+-- Tabla de notificaciones
+CREATE TABLE IF NOT EXISTS notificaciones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tarea_id UUID REFERENCES tareas(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  jefe_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL CHECK (tipo IN ('progreso', 'completada')),
+  progreso INTEGER,
+  leida BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Habilitar Row Level Security
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categorias ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tareas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tarea_usuarios ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notificaciones ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de acceso para usuarios autenticados
 CREATE POLICY "Users can read profiles" ON profiles FOR SELECT TO authenticated USING (true);
@@ -72,6 +85,9 @@ CREATE POLICY "Users can read categorias" ON categorias FOR SELECT TO authentica
 CREATE POLICY "Jefe can create categorias" ON categorias FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Users can read tareas" ON tareas FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Users can read tarea_usuarios" ON tarea_usuarios FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Users can read notificaciones" ON notificaciones FOR SELECT TO authenticated USING (jefe_id = auth.uid());
+CREATE POLICY "Users can insert notificaciones" ON notificaciones FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Users can update notificaciones" ON notificaciones FOR UPDATE TO authenticated USING (jefe_id = auth.uid());
 
 -- Políticas de escritura
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
