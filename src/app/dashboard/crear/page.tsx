@@ -26,10 +26,16 @@ export default async function CrearTareaPage() {
     .eq('rol', 'usuario')
     .order('nombre')
 
+  const { data: categorias } = await supabase
+    .from('categorias')
+    .select('id, nombre')
+    .eq('created_by', user.id)
+    .order('nombre')
+
   return (
     <div>
       <h2 style={{ marginBottom: '24px' }}>Crear Nueva Tarea</h2>
-      <CreateTaskForm jefeId={user.id} usuarios={usuarios || []} />
+      <CreateTaskForm jefeId={user.id} usuarios={usuarios || []} categorias={categorias || []} />
     </div>
   )
 }

@@ -11,12 +11,18 @@ interface Usuario {
   email: string
 }
 
+interface Categoria {
+  id: string
+  nombre: string
+}
+
 interface CreateTaskFormProps {
   jefeId: string
   usuarios: Usuario[]
+  categorias: Categoria[]
 }
 
-export default function CreateTaskForm({ jefeId, usuarios }: CreateTaskFormProps) {
+export default function CreateTaskForm({ jefeId, usuarios, categorias }: CreateTaskFormProps) {
   const supabase = createClient()
   const router = useRouter()
 
@@ -25,6 +31,9 @@ export default function CreateTaskForm({ jefeId, usuarios }: CreateTaskFormProps
   const [puntos, setPuntos] = useState(5)
   const [fechaLimite, setFechaLimite] = useState('')
   const [asignados, setAsignados] = useState<string[]>([])
+  const [categoriaId, setCategoriaId] = useState('')
+  const [nuevaCategoria, setNuevaCategoria] = useState('')
+  const [creandoCategoria, setCreandoCategoria] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -42,6 +51,20 @@ export default function CreateTaskForm({ jefeId, usuarios }: CreateTaskFormProps
     setError('')
 
     try {
+      let catId = categoriaId
+
+      // Crear categoria nueva si corresponde
+      if (categoriaId === '__nueva__' && nuevaCategoria.trim()) {
+        setCreandoCategoria(true)
+        const { data: catData, error: catError } = await supabase
+          .from('categorias')
+          .insert({ nombre: nuevaCategoria.trim(), created_by: jefeId })
+          .select()
+          .single()
+        if (catError) throw catError
+        catId = catData.id
+      }
+
       const { data: tarea, error: tareaError } = await supabase
         .from('tareas')
         .insert({
@@ -50,6 +73,7 @@ export default function CreateTaskForm({ jefeId, usuarios }: CreateTaskFormProps
           puntos,
           fecha_limite: fechaLimite,
           created_by: jefeId,
+          categoria_id: catId || null,
         })
         .select()
         .single()
@@ -154,6 +178,32 @@ export default function CreateTaskForm({ jefeId, usuarios }: CreateTaskFormProps
                 min={hoy}
               />
             </div>
+          </div>
+
+          <div className={styles.field}>
+            <label className="label">📂 Categoría</label>
+            <select
+              value={categoriaId}
+              onChange={(e) => setCategoriaId(e.target.value)}
+              className="input"
+            >
+              <option value="">Sin categoría</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+              <option value="__nueva__">+ Crear nueva categoría</option>
+            </select>
+            {categoriaId === '__nueva__' && (
+              <input
+                type="text"
+                value={nuevaCategoria}
+                onChange={(e) => setNuevaCategoria(e.target.value)}
+                className="input"
+                placeholder="Nombre de la nueva categoría"
+                style={{ marginTop: '8px' }}
+                autoFocus
+              />
+            )}
           </div>
         </div>
 

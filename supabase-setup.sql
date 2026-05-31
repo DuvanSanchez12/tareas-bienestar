@@ -29,6 +29,15 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- Tabla de categorias
+CREATE TABLE IF NOT EXISTS categorias (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre TEXT NOT NULL,
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(nombre, created_by)
+);
+
 -- Tabla de tareas
 CREATE TABLE IF NOT EXISTS tareas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -37,6 +46,7 @@ CREATE TABLE IF NOT EXISTS tareas (
   puntos INTEGER CHECK (puntos >= 1 AND puntos <= 10),
   fecha_limite DATE NOT NULL,
   created_by UUID REFERENCES profiles(id),
+  categoria_id UUID REFERENCES categorias(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -52,11 +62,14 @@ CREATE TABLE IF NOT EXISTS tarea_usuarios (
 
 -- Habilitar Row Level Security
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categorias ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tareas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tarea_usuarios ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de acceso para usuarios autenticados
 CREATE POLICY "Users can read profiles" ON profiles FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Users can read categorias" ON categorias FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Jefe can create categorias" ON categorias FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Users can read tareas" ON tareas FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Users can read tarea_usuarios" ON tarea_usuarios FOR SELECT TO authenticated USING (true);
 

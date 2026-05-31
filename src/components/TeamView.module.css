@@ -199,6 +199,15 @@
   font-size: 12px;
 }
 
+.catBadge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+}
+
 .removeBtn {
   padding: 6px 14px;
   border-radius: 6px;

@@ -22,6 +22,8 @@ export default async function DashboardPage() {
 
   let tareas: any[] = []
 
+  let categorias: { id: string; nombre: string }[] = []
+
   if (profile.rol === 'jefe') {
     const { data: tareasData } = await supabase
       .from('tareas')
@@ -31,15 +33,21 @@ export default async function DashboardPage() {
 
     const tareasIds = (tareasData || []).map(t => t.id)
     const creatorIds = [...new Set((tareasData || []).map(t => t.created_by).filter(Boolean))]
+    const categoriaIds = [...new Set((tareasData || []).map(t => t.categoria_id).filter(Boolean))]
 
-    const [creatorsData, asignacionesData] = await Promise.all([
+    const [creatorsData, asignacionesData, categoriasData] = await Promise.all([
       creatorIds.length > 0 
         ? supabase.from('profiles').select('id, nombre').in('id', creatorIds).then(r => r.data || [])
         : Promise.resolve([]),
-      supabase.from('tarea_usuarios').select('*, user:profiles(nombre, rol)').in('tarea_id', tareasIds).then(r => r.data || [])
+      supabase.from('tarea_usuarios').select('*, user:profiles(nombre, rol)').in('tarea_id', tareasIds).then(r => r.data || []),
+      categoriaIds.length > 0
+        ? supabase.from('categorias').select('id, nombre').in('id', categoriaIds).then(r => r.data || [])
+        : Promise.resolve([]),
     ])
 
     const creatorsMap = new Map(creatorsData.map(c => [c.id, c.nombre]))
+    const categoriasMap = new Map(categoriasData.map(c => [c.id, c.nombre]))
+    categorias = categoriasData
 
     tareas = (tareasData || [])
       .map(tarea => {
@@ -51,6 +59,9 @@ export default async function DashboardPage() {
           ...tarea,
           promedioTarea,
           creator: creatorsMap.has(tarea.created_by) ? { nombre: creatorsMap.get(tarea.created_by) } : null,
+          categoria: tarea.categoria_id && categoriasMap.has(tarea.categoria_id)
+            ? { nombre: categoriasMap.get(tarea.categoria_id) }
+            : null,
           tarea_usuarios: asignacionesTarea,
         }
       })
@@ -62,17 +73,25 @@ export default async function DashboardPage() {
       .eq('user_id', user.id)
 
     const tareasIds = (asignaciones || []).map(a => a.tarea_id)
+    const categoriaIds = [...new Set((asignaciones || []).map(a => a.tarea?.categoria_id).filter(Boolean))]
     const creatorsData = tareasIds.length > 0 
       ? await supabase.from('profiles').select('id, nombre').in('id', [...new Set((asignaciones || []).map(a => a.tarea?.created_by).filter(Boolean))]).then(r => r.data || [])
       : []
+    const categoriasData = categoriaIds.length > 0
+      ? await supabase.from('categorias').select('id, nombre').in('id', categoriaIds).then(r => r.data || [])
+      : []
     
     const creatorsMap = new Map(creatorsData.map(c => [c.id, c.nombre]))
+    const categoriasMap = new Map(categoriasData.map(c => [c.id, c.nombre]))
 
     tareas = (asignaciones || []).map(t => ({
       ...t.tarea,
       miProgreso: t.progreso,
       creator: t.tarea?.created_by && creatorsMap.has(t.tarea.created_by) 
         ? { nombre: creatorsMap.get(t.tarea.created_by) } 
+        : null,
+      categoria: t.tarea?.categoria_id && categoriasMap.has(t.tarea.categoria_id)
+        ? { nombre: categoriasMap.get(t.tarea.categoria_id) }
         : null,
       tarea_usuarios: [],
     }))
@@ -143,6 +162,45 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {profile.rol === 'jefe' && categorias.length > 0 && (
+          <div style={{ marginBottom: '32px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px' }}>📂 Progreso por categoría</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
+              {categorias.map((cat) => {
+                const tareasCat = tareas.filter(t => t.categoria?.nombre === cat.nombre)
+                let totalAsig = 0
+                let completadas = 0
+                let sumaProgreso = 0
+                tareasCat.forEach(t => {
+                  if (t.tarea_usuarios) {
+                    t.tarea_usuarios.forEach((a: { progreso: number }) => {
+                      totalAsig++
+                      sumaProgreso += a.progreso
+                      if (a.progreso === 100) completadas++
+                    })
+                  }
+                })
+                const promedio = totalAsig > 0 ? Math.round(sumaProgreso / totalAsig) : 0
+                return (
+                  <div key={cat.id} style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '16px',
+                  }}>
+                    <div style={{ fontWeight: 600, fontSize: '15px', marginBottom: '12px' }}>{cat.nombre}</div>
+                    <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      <span><strong style={{ color: 'var(--text-primary)' }}>{tareasCat.length}</strong> tareas</span>
+                      <span><strong style={{ color: 'var(--text-primary)' }}>{completadas}</strong> completadas</span>
+                      <span><strong style={{ color: 'var(--text-primary)' }}>{promedio}%</strong> prom.</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         <TaskList tareas={tareas} rol={profile.rol} userId={user.id} />
       </div>

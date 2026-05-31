@@ -11,6 +11,8 @@ interface Tarea {
   puntos: number
   fecha_limite: string
   created_by: string
+  categoria_id?: string | null
+  categoria?: { nombre: string } | null
   miProgreso?: number
   promedioTarea?: number
   creator?: { nombre: string }
@@ -83,9 +85,20 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
   const [updating, setUpdating] = useState<string | null>(null)
   const [filterVencimiento, setFilterVencimiento] = useState<FilterVencimiento>('todas')
   const [filterImportancia, setFilterImportancia] = useState<FilterImportancia>('toda')
+  const [filterCategoria, setFilterCategoria] = useState('todas')
   const [showConfirm, setShowConfirm] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [progresoTemporal, setProgresoTemporal] = useState<{ [key: string]: number | undefined }>({})
+
+  const categoriasDisponibles = useMemo(() => {
+    const cats = new Map<string, string>()
+    tareas.forEach(t => {
+      if (t.categoria?.nombre) {
+        cats.set(t.categoria.nombre, t.categoria.nombre)
+      }
+    })
+    return Array.from(cats.values()).sort()
+  }, [tareas])
 
   const handleProgresoChange = (tareaId: string, progreso: number) => {
     if (progreso === 100) {
@@ -168,6 +181,11 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
           return true
       }
     })
+
+    // Aplicar filtro de categoria
+    if (filterCategoria !== 'todas') {
+      result = result.filter(t => t.categoria?.nombre === filterCategoria)
+    }
 
     return result
   }, [tareas, filterVencimiento, filterImportancia, searchTerm])
@@ -315,6 +333,30 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
         </div>
       </div>
 
+      {/* Filtro de categoria */}
+      {categoriasDisponibles.length > 0 && (
+        <div className={styles.filterSection}>
+          <div className={styles.filterLabel}>📂 Categoría</div>
+          <div className={styles.filters}>
+            <button
+              className={`${styles.filterBtn} ${filterCategoria === 'todas' ? styles.filterActive : ''}`}
+              onClick={() => setFilterCategoria('todas')}
+            >
+              Todas
+            </button>
+            {categoriasDisponibles.map((cat) => (
+              <button
+                key={cat}
+                className={`${styles.filterBtn} ${filterCategoria === cat ? styles.filterActive : ''}`}
+                onClick={() => setFilterCategoria(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Contador de resultados */}
       {searchTerm && (
         <div className={styles.resultCount}>
@@ -378,6 +420,9 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
                         <span className={`badge status-${importanciaColor}`}>
                           {getImportanciaLabel(tarea.puntos)}
                         </span>
+                        {tarea.categoria?.nombre && (
+                          <span className={styles.categoriaBadge}>{tarea.categoria.nombre}</span>
+                        )}
                       </div>
 
                       {rol === 'usuario' && (
@@ -482,6 +527,9 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
                             <span className={`badge status-${importanciaColor}`}>
                               {getImportanciaLabel(tarea.puntos)}
                             </span>
+                            {tarea.categoria?.nombre && (
+                              <span className={styles.categoriaBadge}>{tarea.categoria.nombre}</span>
+                            )}
                           </div>
 
                           <div className={styles.completedBadge}>

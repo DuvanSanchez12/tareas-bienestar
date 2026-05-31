@@ -22,10 +22,17 @@ export default async function EquipoPage() {
 
   const { data: tareas } = await supabase
     .from('tareas')
-    .select('id, titulo, descripcion, puntos, fecha_limite')
+    .select('id, titulo, descripcion, puntos, fecha_limite, categoria_id')
     .eq('created_by', user.id)
 
   const tareasIds = (tareas || []).map(t => t.id)
+  const categoriaIds = [...new Set((tareas || []).map(t => t.categoria_id).filter(Boolean))]
+
+  const { data: categorias } = categoriaIds.length > 0
+    ? await supabase.from('categorias').select('id, nombre').in('id', categoriaIds)
+    : { data: [] }
+
+  const categoriasMap = new Map((categorias || []).map(c => [c.id, c.nombre]))
 
   const { data: tareaUsuarios } = tareasIds.length > 0
     ? await supabase.from('tarea_usuarios').select('id, tarea_id, user_id, progreso').in('tarea_id', tareasIds)
@@ -51,6 +58,7 @@ export default async function EquipoPage() {
       .map((a) => {
         const t = tareasMap.get(a.tarea_id)
         if (!t) return null
+        const catNombre = t.categoria_id ? categoriasMap.get(t.categoria_id) : null
         return {
           tu_id: a.id,
           tarea_id: a.tarea_id,
@@ -59,6 +67,7 @@ export default async function EquipoPage() {
           puntos: t.puntos,
           fecha_limite: t.fecha_limite,
           progreso: a.progreso,
+          categoria: catNombre ? { nombre: catNombre } : null,
         }
       })
       .filter(Boolean) as Array<{
@@ -69,6 +78,7 @@ export default async function EquipoPage() {
         puntos: number
         fecha_limite: string
         progreso: number
+        categoria: { nombre: string } | null
       }>
 
     return {

@@ -12,6 +12,7 @@ interface TareaAsignada {
   puntos: number
   fecha_limite: string
   progreso: number
+  categoria: { nombre: string } | null
 }
 
 interface UsuarioConTareas {
@@ -151,6 +152,9 @@ export default function TeamView({ usuarios }: TeamViewProps) {
                                       {t.progreso}% • {getLabelCompletado(t.progreso)}
                                     </span>
                                     <span>⭐ {t.puntos} pts</span>
+                                    {t.categoria?.nombre && (
+                                      <span className={styles.catBadge}>{t.categoria.nombre}</span>
+                                    )}
                                   </div>
                                 </div>
                                 <button
@@ -186,6 +190,9 @@ export default function TeamView({ usuarios }: TeamViewProps) {
                                     </span>
                                     <span style={{ color: '#10b981', fontWeight: 600 }}>✅ 100%</span>
                                     <span>⭐ {t.puntos} pts</span>
+                                    {t.categoria?.nombre && (
+                                      <span className={styles.catBadge}>{t.categoria.nombre}</span>
+                                    )}
                                   </div>
                                 </div>
                                 <button
