@@ -396,9 +396,9 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
       ) : (
         (() => {
           const tareasCompletadas = filteredTareas.filter(t =>
-            rol === 'jefe'
-              ? t.tarea_usuarios?.every(a => a.progreso === 100) ?? false
-              : (t.miProgreso ?? 0) === 100
+            t.miProgreso !== undefined
+              ? (t.miProgreso ?? 0) === 100
+              : t.tarea_usuarios?.every(a => a.progreso === 100) ?? false
           )
           const completadasSet = new Set(tareasCompletadas.map(t => t.id))
           const tareasActivas = filteredTareas.filter(t => !completadasSet.has(t.id))
@@ -444,7 +444,7 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
                         )}
                       </div>
 
-                      {rol === 'usuario' && (
+                      {tarea.miProgreso !== undefined && (
                         <div className={styles.progresoSection}>
                           <div className={styles.progresoHeader}>
                             <span className={styles.progresoLabel}>Mi progreso</span>

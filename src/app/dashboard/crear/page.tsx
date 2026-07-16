@@ -20,11 +20,16 @@ export default async function CrearTareaPage() {
     redirect('/dashboard')
   }
 
-  const { data: usuarios } = await supabase
+  const { data: usuariosData } = await supabase
     .from('profiles')
     .select('id, nombre, email')
     .eq('rol', 'usuario')
     .order('nombre')
+
+  const usuarios = [
+    { id: user.id, nombre: `${profile.nombre} (Tú)`, email: profile.email || '' },
+    ...(usuariosData || []).filter(u => u.id !== user.id),
+  ]
 
   const { data: categorias } = await supabase
     .from('categorias')

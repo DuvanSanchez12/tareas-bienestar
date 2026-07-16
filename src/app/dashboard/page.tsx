@@ -55,9 +55,11 @@ export default async function DashboardPage() {
         const promedioTarea = asignacionesTarea.length > 0
           ? Math.round(asignacionesTarea.reduce((acc, a) => acc + a.progreso, 0) / asignacionesTarea.length)
           : 0
+        const miProgreso = asignacionesTarea.find(a => a.user_id === user.id)?.progreso
         return {
           ...tarea,
           promedioTarea,
+          miProgreso,
           creator: creatorsMap.has(tarea.created_by) ? { nombre: creatorsMap.get(tarea.created_by) } : null,
           categoria: tarea.categoria_id && categoriasMap.has(tarea.categoria_id)
             ? { nombre: categoriasMap.get(tarea.categoria_id) }
@@ -65,7 +67,6 @@ export default async function DashboardPage() {
           tarea_usuarios: asignacionesTarea,
         }
       })
-      .filter(t => t.tarea_usuarios.length > 0)
   } else {
     const { data: asignaciones } = await supabase
       .from('tarea_usuarios')
