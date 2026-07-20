@@ -43,13 +43,17 @@ function formatDate(d: Date): string {
 }
 
 function generarSemanas(): { label: string; lunes: Date; domingo: Date }[] {
-  const hoy = new Date()
-  const lunesHoy = getMonday(hoy)
-  const enero = new Date(hoy.getFullYear(), 0, 1)
+  const year = new Date().getFullYear()
+  const enero = new Date(year, 0, 1)
   const lunesEnero = getMonday(enero)
+  // Si enero 1 cae después del lunes de esa semana, retrocedemos una semana
+  if (enero < lunesEnero) lunesEnero.setDate(lunesEnero.getDate() - 7)
+
+  const diciembre = new Date(year, 11, 31)
+  const lunesDiciembre = getMonday(diciembre)
 
   const semanas: { label: string; lunes: Date; domingo: Date }[] = []
-  const current = new Date(lunesHoy)
+  const current = new Date(lunesDiciembre)
 
   while (current >= lunesEnero) {
     const lunes = new Date(current)
