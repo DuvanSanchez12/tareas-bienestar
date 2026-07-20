@@ -66,9 +66,9 @@ function getProgresoLabel(progreso: number): string {
 }
 
 function getImportanciaLabel(puntos: number): string {
-  if (puntos >= 8) return 'Muy importante'
-  if (puntos >= 4) return 'Más o menos'
-  return 'Nada importante'
+  if (puntos >= 8) return 'Urgente'
+  if (puntos >= 4) return 'Importante'
+  return 'Baja prioridad'
 }
 
 function getImportanciaColor(puntos: number): string {
@@ -221,9 +221,9 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
   const getFilterImportanciaLabel = (f: FilterImportancia) => {
     switch (f) {
       case 'toda': return 'Toda'
-      case 'muy_importante': return '🔥 Muy importante'
-      case 'mas_o_menos': return '😐 Más o menos'
-      case 'nada_importante': return '✅ Nada importante'
+      case 'muy_importante': return '🔥 Urgente'
+      case 'mas_o_menos': return '😐 Importante'
+      case 'nada_importante': return '✅ Baja prioridad'
     }
   }
 
@@ -298,7 +298,7 @@ export default function TaskList({ tareas, rol, userId }: TaskListProps) {
 
       {/* Filtros de vencimiento */}
       <div className={styles.filterSection}>
-        <div className={styles.filterLabel}>📅 Venimiento</div>
+        <div className={styles.filterLabel}>📅 Vencimiento</div>
         <div className={styles.filters}>
           {(['todas', 'vencidas', 'proximo', 'lejanas'] as FilterVencimiento[]).map((f) => (
             <button

@@ -42,7 +42,7 @@ export default async function EquipoPage() {
   const userIdsConTareas = [...new Set((tareaUsuarios || []).map(a => a.user_id))]
 
   const { data: usuarios } = userIdsConTareas.length > 0
-    ? await supabase.from('profiles').select('*').eq('rol', 'usuario').in('id', userIdsConTareas).order('nombre')
+    ? await supabase.from('profiles').select('*').in('id', userIdsConTareas).order('nombre')
     : { data: [] }
 
   const tareasMap = new Map((tareas || []).map(t => [t.id, t]))
