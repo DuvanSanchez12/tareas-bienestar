@@ -112,8 +112,6 @@ export default function CreateTaskForm({ jefeId, usuarios, categorias }: CreateT
     }
   }
 
-  const hoy = new Date().toISOString().split('T')[0]
-
   return (
     <div className={styles.container}>
       <form onSubmit={handleSubmit} className={styles.form}>
@@ -175,7 +173,6 @@ export default function CreateTaskForm({ jefeId, usuarios, categorias }: CreateT
                 onChange={(e) => setFechaLimite(e.target.value)}
                 className="input"
                 required
-                min={hoy}
               />
             </div>
           </div>
