@@ -26,6 +26,7 @@ interface UsuarioConTareas {
 
 interface TeamViewProps {
   usuarios: UsuarioConTareas[]
+  asignacionesPorTarea?: Record<string, number>
 }
 
 function getDiasRestantes(fechaLimite: string): number {
@@ -56,19 +57,23 @@ function getLabelCompletado(progreso: number): string {
   return 'Por terminar'
 }
 
-export default function TeamView({ usuarios }: TeamViewProps) {
+export default function TeamView({ usuarios, asignacionesPorTarea = {} }: TeamViewProps) {
   const supabase = createClient()
   const [selectedUser, setSelectedUser] = useState<UsuarioConTareas | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState<{ tu_id: string; titulo: string } | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<{ tu_id: string; tarea_id: string; titulo: string; ultimo: boolean } | null>(null)
 
-  const handleDelete = async (tuId: string) => {
-    setDeleting(tuId)
+  const quitarAsignacion = async () => {
+    if (!confirmDelete) return
+    setDeleting(confirmDelete.tu_id)
     try {
-      const { error } = await supabase.from('tarea_usuarios').delete().eq('id', tuId)
-      if (error) throw error
+      if (confirmDelete.ultimo) {
+        await supabase.from('tareas').delete().eq('id', confirmDelete.tarea_id)
+      } else {
+        await supabase.from('tarea_usuarios').delete().eq('id', confirmDelete.tu_id)
+      }
     } catch (err) {
-      console.error('Error al quitar asignación:', err)
+      console.error('Error:', err)
     }
     setConfirmDelete(null)
     setDeleting(null)
@@ -159,7 +164,12 @@ export default function TeamView({ usuarios }: TeamViewProps) {
                                 </div>
                                 <button
                                   className={styles.removeBtn}
-                                  onClick={() => setConfirmDelete({ tu_id: t.tu_id, titulo: t.titulo })}
+                                  onClick={() => setConfirmDelete({
+                                    tu_id: t.tu_id,
+                                    tarea_id: t.tarea_id,
+                                    titulo: t.titulo,
+                                    ultimo: (asignacionesPorTarea[t.tarea_id] || 1) <= 1
+                                  })}
                                 >
                                   Quitar asignación
                                 </button>
@@ -197,7 +207,12 @@ export default function TeamView({ usuarios }: TeamViewProps) {
                                 </div>
                                 <button
                                   className={styles.removeBtn}
-                                  onClick={() => setConfirmDelete({ tu_id: t.tu_id, titulo: t.titulo })}
+                                  onClick={() => setConfirmDelete({
+                                    tu_id: t.tu_id,
+                                    tarea_id: t.tarea_id,
+                                    titulo: t.titulo,
+                                    ultimo: (asignacionesPorTarea[t.tarea_id] || 1) <= 1
+                                  })}
                                 >
                                   Quitar asignación
                                 </button>
@@ -223,18 +238,31 @@ export default function TeamView({ usuarios }: TeamViewProps) {
         <div className={styles.modalOverlay} onClick={() => setConfirmDelete(null)}>
           <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
             <div className={styles.modalIcon}>🗑️</div>
-            <h2 className={styles.modalTitle}>¿Quitar asignación?</h2>
-            <p className={styles.modalText}>
-              Se quitará la tarea <strong>"{confirmDelete.titulo}"</strong> de <strong>{selectedUser.nombre}</strong>.
-            </p>
-            <p className={styles.modalSubtext}>El progreso se perderá. La tarea seguirá existiendo.</p>
+            <h2 className={styles.modalTitle}>
+              {confirmDelete.ultimo ? '¿Des-asignar último usuario?' : '¿Quitar asignación?'}
+            </h2>
+            {confirmDelete.ultimo ? (
+              <>
+                <p className={styles.modalText}>
+                  <strong>"{confirmDelete.titulo}"</strong> solo está asignada a <strong>{selectedUser.nombre}</strong>.
+                </p>
+                <p className={styles.modalSubtext}>Si lo des-asignas, <strong>la tarea se borrará</strong> permanentemente.</p>
+              </>
+            ) : (
+              <>
+                <p className={styles.modalText}>
+                  Se quitará la tarea <strong>"{confirmDelete.titulo}"</strong> de <strong>{selectedUser.nombre}</strong>.
+                </p>
+                <p className={styles.modalSubtext}>El progreso se perderá. La tarea seguirá existiendo.</p>
+              </>
+            )}
             <div className={styles.modalActions}>
               <button
                 className={styles.deleteConfirmBtn}
-                onClick={() => handleDelete(confirmDelete.tu_id)}
+                onClick={quitarAsignacion}
                 disabled={deleting === confirmDelete.tu_id}
               >
-                {deleting === confirmDelete.tu_id ? 'Quitando...' : 'Sí, quitar'}
+                {deleting === confirmDelete.tu_id ? 'Procesando...' : confirmDelete.ultimo ? 'Sí, des-asignar y borrar' : 'Sí, quitar'}
               </button>
               <button
                 className={styles.cancelBtn}

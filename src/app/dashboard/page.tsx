@@ -67,6 +67,7 @@ export default async function DashboardPage() {
           tarea_usuarios: asignacionesTarea,
         }
       })
+      .filter(t => t.tarea_usuarios.length > 0)
   } else {
     const { data: asignaciones } = await supabase
       .from('tarea_usuarios')

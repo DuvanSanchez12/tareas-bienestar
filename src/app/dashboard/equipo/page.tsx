@@ -47,6 +47,12 @@ export default async function EquipoPage() {
 
   const tareasMap = new Map((tareas || []).map(t => [t.id, t]))
 
+  // Contar asignaciones por tarea
+  const asignacionesPorTarea: Record<string, number> = {}
+  ;(tareaUsuarios || []).forEach(a => {
+    asignacionesPorTarea[a.tarea_id] = (asignacionesPorTarea[a.tarea_id] || 0) + 1
+  })
+
   const usuariosConStats = (usuarios || []).map((u) => {
     const asignaciones = (tareaUsuarios || []).filter((a) => a.user_id === u.id)
     const totalTareas = asignaciones.length
@@ -94,7 +100,7 @@ export default async function EquipoPage() {
   return (
     <div>
       <h2 style={{ marginBottom: '24px' }}>Equipo</h2>
-      <TeamView usuarios={usuariosConStats} />
+      <TeamView usuarios={usuariosConStats} asignacionesPorTarea={asignacionesPorTarea} />
     </div>
   )
 }
